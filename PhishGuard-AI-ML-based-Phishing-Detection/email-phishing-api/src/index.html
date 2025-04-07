@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        h1 {
+            color: #2c3e50;
+            font-size: 28px;
+        }
+
+        .refresh-btn {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+
+        .refresh-btn:hover {
+            background-color: #2980b9;
+        }
+
+        .email-list {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+        }
+
+        .email-item {
+            padding: 15px 20px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .email-item:hover {
+            background-color: #f9f9f9;
+        }
+
+        .email-item.active {
+            background-color: #e8f4fc;
+        }
+
+        .email-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .email-from {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .email-date {
+            color: #7f8c8d;
+            font-size: 13px;
+        }
+
+        .email-subject {
+            font-weight: 500;
+            margin-bottom: 5px;
+            color: #34495e;
+        }
+
+        .email-snippet {
+            color: #7f8c8d;
+            font-size: 14px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .email-detail {
+            display: none;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            margin-top: 20px;
+        }
+
+        .email-detail.active {
+            display: block;
+        }
+
+        .detail-header {
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .detail-subject {
+            font-size: 20px;
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+
+        .detail-from, .detail-date {
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+
+        .detail-body {
+            line-height: 1.7;
+            color: #34495e;
+        }
+
+        .url-section {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+        }
+
+        .url-section h3 {
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+
+        .url-list {
+            list-style-type: none;
+        }
+
+        .url-item {
+            padding: 8px 0;
+            border-bottom: 1px dashed #eee;
+        }
+
+        .url-item a {
+            color: #3498db;
+            text-decoration: none;
+            word-break: break-all;
+        }
+
+        .url-item a:hover {
+            text-decoration: underline;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+            margin-left: 10px;
+        }
+
+        .status-safe {
+            background-color: #e8f8f5;
+            color: #27ae60;
+        }
+
+        .status-warning {
+            background-color: #fef9e7;
+            color: #f39c12;
+        }
+
+        .status-danger {
+            background-color: #fdedec;
+            color: #e74c3c;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #7f8c8d;
+        }
+
+        .error {
+            color: #e74c3c;
+            text-align: center;
+            padding: 20px;
+            background-color: #fdedec;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #7f8c8d;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .email-header {
+                flex-direction: column;
+            }
+            
+            .email-date {
+                margin-top: 5px;
+                align-self: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Email Dashboard</h1>
+            <button class="refresh-btn" id="refreshBtn">Refresh Emails</button>
+        </header>
+
+        <div id="emailList" class="email-list">
+            <!-- Email items will be inserted here -->
+        </div>
+
+        <div id="emailDetail" class="email-detail">
+            <!-- Email detail will be inserted here -->
+        </div>
+
+        <div id="loading" class="loading" style="display: none;">
+            Loading emails...
+        </div>
+
+        <div id="error" class="error" style="display: none;">
+            Error loading emails. Please try again.
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const emailList = document.getElementById('emailList');
+            const emailDetail = document.getElementById('emailDetail');
+            const refreshBtn = document.getElementById('refreshBtn');
+            const loading = document.getElementById('loading');
+            const error = document.getElementById('error');
+
+            // Fetch emails from backend
+            function fetchEmails() {
+                loading.style.display = 'block';
+                error.style.display = 'none';
+                emailList.innerHTML = '';
+                emailDetail.innerHTML = '';
+
+                fetch('http://localhost:8080/fetch-emails')
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    })
+                    .then(emails => {
+                        loading.style.display = 'none';
+                        if (emails.length === 0) {
+                            emailList.innerHTML = `
+                                <div class="empty-state">
+                                    <p>No emails found</p>
+                                </div>
+                            `;
+                            return;
+                        }
+                        renderEmailList(emails);
+                    })
+                    .catch(err => {
+                        console.error('Error fetching emails:', err);
+                        loading.style.display = 'none';
+                        error.style.display = 'block';
+                    });
+            }
+
+            // Render email list
+            function renderEmailList(emails) {
+                emailList.innerHTML = '';
+                emails.forEach((email, index) => {
+                    const emailItem = document.createElement('div');
+                    emailItem.className = 'email-item';
+                    emailItem.dataset.index = index;
+                    
+                    const date = new Date().toLocaleString(); // In a real app, you'd use the actual email date
+                    
+                    emailItem.innerHTML = `
+                        <div class="email-header">
+                            <span class="email-from">${email.from}</span>
+                            <span class="email-date">${date}</span>
+                        </div>
+                        <div class="email-subject">${email.subject}</div>
+                        <div class="email-snippet">${email.snippet}</div>
+                        ${email.isPhishingEmail ? 
+                            '<span class="status-badge status-danger">Phishing</span>' : 
+                            '<span class="status-badge status-safe">Safe</span>'}
+                    `;
+                    
+                    emailItem.addEventListener('click', () => {
+                        // Remove active class from all items
+                        document.querySelectorAll('.email-item').forEach(item => {
+                            item.classList.remove('active');
+                        });
+                        // Add active class to clicked item
+                        emailItem.classList.add('active');
+                        // Show email detail
+                        renderEmailDetail(email);
+                    });
+                    
+                    emailList.appendChild(emailItem);
+                });
+            }
+
+            // Render email detail
+            function renderEmailDetail(email) {
+                emailDetail.innerHTML = '';
+                emailDetail.className = 'email-detail active';
+                
+                const date = new Date().toLocaleString(); // In a real app, you'd use the actual email date
+                
+                let urlsHtml = '';
+                if (email.urls && email.urls.length > 0) {
+                    urlsHtml = `
+                        <div class="url-section">
+                            <h3>URLs in this email</h3>
+                            <ul class="url-list">
+                                ${email.urls.map(url => `
+                                    <li class="url-item">
+                                        <a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>
+                                    </li>
+                                `).join('')}
+                            </ul>
+                        </div>
+                    `;
+                }
+                
+                emailDetail.innerHTML = `
+                    <div class="detail-header">
+                        <h2 class="detail-subject">${email.subject}</h2>
+                        <div class="detail-from">From: ${email.from}</div>
+                        <div class="detail-date">Date: ${date}</div>
+                    </div>
+                    <div class="detail-body">
+                        <p>${email.snippet}</p>
+                        ${email.isPhishingEmail ? 
+                            '<p class="status-badge status-danger">This email has been flagged as potential phishing</p>' : 
+                            '<p class="status-badge status-safe">This email appears to be safe</p>'}
+                    </div>
+                    ${urlsHtml}
+                `;
+            }
+
+            // Initial load
+            fetchEmails();
+
+            // Refresh button click handler
+            refreshBtn.addEventListener('click', fetchEmails);
+        });
+    </script>
+</body>
+</html>
