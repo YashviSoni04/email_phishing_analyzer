@@ -12,3 +12,5 @@ Pipfile.lock
 # Ignore IDE files
 .vscode/
 .idea/
+
+prompt.txt
