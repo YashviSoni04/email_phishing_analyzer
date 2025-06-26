@@ -16,7 +16,8 @@ import webbrowser
 import os
 import threading
 import tempfile
-from flask import Flask, request, render_template_string, jsonify
+from flask import Flask, request, jsonify
+from flask_cors import CORS
 
 class EmailVerdict(Enum):
     SAFE = "SAFE"
@@ -194,383 +195,85 @@ class PhishingAnalyzer:
 
 # Flask app for the web interface
 app = Flask(__name__)
+CORS(app)  
 analyzer = PhishingAnalyzer()
 
-# HTML Template for the frontend
-HTML_TEMPLATE = '''
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Email Phishing Analyzer</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f5f5f5;
-        }
-        .container {
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            padding: 30px;
-        }
-        h1 {
-            color: #2c3e50;
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        .form-group {
-            margin-bottom: 20px;
-        }
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: bold;
-        }
-        textarea, input {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            box-sizing: border-box;
-            font-family: inherit;
-        }
-        textarea {
-            min-height: 200px;
-        }
-        button {
-            background-color: #2980b9;
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 16px;
-            display: block;
-            margin: 20px auto;
-            transition: background-color 0.3s;
-        }
-        button:hover {
-            background-color: #3498db;
-        }
-        .result {
-            margin-top: 30px;
-            padding: 20px;
-            border-radius: 8px;
-            display: none;
-        }
-        .safe {
-            background-color: #d4edda;
-            border: 1px solid #c3e6cb;
-        }
-        .suspicious {
-            background-color: #fff3cd;
-            border: 1px solid #ffeeba;
-        }
-        .malicious {
-            background-color: #f8d7da;
-            border: 1px solid #f5c6cb;
-        }
-        .verdict {
-            font-size: 24px;
-            text-align: center;
-            margin-bottom: 20px;
-            font-weight: bold;
-        }
-        .risk-meter {
-            height: 20px;
-            background-color: #e9ecef;
-            border-radius: 10px;
-            margin: 20px 0;
-            overflow: hidden;
-        }
-        .risk-value {
-            height: 100%;
-            background: linear-gradient(90deg, #28a745, #ffc107, #dc3545);
-            border-radius: 10px;
-            transition: width 0.5s;
-        }
-        .section {
-            margin-top: 20px;
-        }
-        .section h3 {
-            border-bottom: 1px solid #eee;
-            padding-bottom: 10px;
-            color: #2c3e50;
-        }
-        ul {
-            padding-left: 20px;
-        }
-        li {
-            margin-bottom: 8px;
-        }
-        .artifact-item {
-            background-color: #f8f9fa;
-            padding: 10px;
-            border-radius: 4px;
-            margin-bottom: 10px;
-        }
-        #loading {
-            display: none;
-            text-align: center;
-            margin: 20px 0;
-        }
-        .spinner {
-            border: 4px solid rgba(0, 0, 0, 0.1);
-            border-left: 4px solid #3498db;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>Email Phishing Analyzer</h1>
-        
-        <div class="form-group">
-            <label for="sender">Sender Email:</label>
-            <input type="email" id="sender" name="sender" placeholder="example@domain.com">
-        </div>
-        
-        <div class="form-group">
-            <label for="subject">Email Subject:</label>
-            <input type="text" id="subject" name="subject" placeholder="Email subject line">
-        </div>
-        
-        <div class="form-group">
-            <label for="content">Email Content (Full email with headers if possible):</label>
-            <textarea id="content" name="content" placeholder="Paste the full email content here including headers..."></textarea>
-        </div>
-        
-        <button id="analyzeBtn" onclick="analyzeEmail()">Analyze Email</button>
-        
-        <div id="loading">
-            <div class="spinner"></div>
-            <p>Analyzing email...</p>
-        </div>
-        
-        <div id="results" class="result">
-            <div class="verdict" id="verdict"></div>
-            
-            <div class="section">
-                <h3>Risk Score</h3>
-                <div class="risk-meter">
-                    <div class="risk-value" id="riskValue"></div>
-                </div>
-                <div id="riskScore" style="text-align: center;"></div>
-            </div>
-            
-            <div class="section">
-                <h3>Analysis Reason</h3>
-                <p id="reason"></p>
-            </div>
-            
-            <div class="section">
-                <h3>Recommendations</h3>
-                <ul id="recommendations"></ul>
-            </div>
-            
-            <div class="section">
-                <h3>Email Artifacts</h3>
-                
-                <div class="artifact-item">
-                    <strong>Sender:</strong> <span id="senderInfo"></span>
-                </div>
-                
-                <div class="artifact-item">
-                    <strong>Subject:</strong> <span id="subjectInfo"></span>
-                </div>
-                
-                <div class="artifact-item">
-                    <strong>URLs Found:</strong>
-                    <ul id="urlsList"></ul>
-                </div>
-                
-                <div class="artifact-item">
-                    <strong>IP Addresses Found:</strong>
-                    <ul id="ipsList"></ul>
-                </div>
-                
-                <div class="artifact-item">
-                    <strong>Attachments:</strong>
-                    <ul id="attachmentsList"></ul>
-                </div>
-            </div>
-        </div>
-    </div>
 
-    <script>
-        function analyzeEmail() {
-            // Show loading spinner
-            document.getElementById('loading').style.display = 'block';
-            document.getElementById('results').style.display = 'none';
-            
-            // Get form values
-            const sender = document.getElementById('sender').value;
-            const subject = document.getElementById('subject').value;
-            const content = document.getElementById('content').value;
-            
-            // Send data to backend
-            fetch('/analyze', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    sender: sender,
-                    subject: subject,
-                    content: content
-                }),
-            })
-            .then(response => response.json())
-            .then(data => {
-                // Hide loading spinner
-                document.getElementById('loading').style.display = 'none';
-                
-                // Set verdict class
-                const resultsDiv = document.getElementById('results');
-                resultsDiv.className = 'result';
-                resultsDiv.classList.add(data.verdict.toLowerCase());
-                resultsDiv.style.display = 'block';
-                
-                // Display verdict
-                document.getElementById('verdict').textContent = data.verdict;
-                
-                // Set risk score
-                document.getElementById('riskScore').textContent = `${data.risk_score}/100`;
-                document.getElementById('riskValue').style.width = `${data.risk_score}%`;
-                
-                // Set reason
-                document.getElementById('reason').textContent = data.reason || 'No suspicious indicators found';
-                
-                // Set recommendations
-                const recsElement = document.getElementById('recommendations');
-                recsElement.innerHTML = '';
-                if (data.recommendations && data.recommendations.length > 0) {
-                    data.recommendations.forEach(rec => {
-                        const li = document.createElement('li');
-                        li.textContent = rec;
-                        recsElement.appendChild(li);
-                    });
-                } else {
-                    recsElement.innerHTML = '<li>No specific recommendations needed.</li>';
-                }
-                
-                // Set artifacts
-                document.getElementById('senderInfo').textContent = data.artifacts.sender || 'Unknown';
-                document.getElementById('subjectInfo').textContent = data.artifacts.subject || 'Unknown';
-                
-                // URLs
-                const urlsList = document.getElementById('urlsList');
-                urlsList.innerHTML = '';
-                if (data.artifacts.urls && data.artifacts.urls.length > 0) {
-                    data.artifacts.urls.forEach(url => {
-                        const li = document.createElement('li');
-                        li.textContent = url;
-                        urlsList.appendChild(li);
-                    });
-                } else {
-                    urlsList.innerHTML = '<li>No URLs found</li>';
-                }
-                
-                // IPs
-                const ipsList = document.getElementById('ipsList');
-                ipsList.innerHTML = '';
-                if (data.artifacts.ips && data.artifacts.ips.length > 0) {
-                    data.artifacts.ips.forEach(ip => {
-                        const li = document.createElement('li');
-                        li.textContent = ip;
-                        ipsList.appendChild(li);
-                    });
-                } else {
-                    ipsList.innerHTML = '<li>No IP addresses found</li>';
-                }
-                
-                // Attachments
-                const attachmentsList = document.getElementById('attachmentsList');
-                attachmentsList.innerHTML = '';
-                if (data.artifacts.attachments && data.artifacts.attachments.length > 0) {
-                    data.artifacts.attachments.forEach(attachment => {
-                        const li = document.createElement('li');
-                        li.textContent = attachment;
-                        attachmentsList.appendChild(li);
-                    });
-                } else {
-                    attachmentsList.innerHTML = '<li>No attachments found</li>';
-                }
-            })
-            .catch((error) => {
-                console.error('Error:', error);
-                document.getElementById('loading').style.display = 'none';
-                alert('An error occurred while analyzing the email. Please try again.');
-            });
-        }
-    </script>
-</body>
-</html>
-'''
 
 @app.route('/')
 def index():
-    return render_template_string(HTML_TEMPLATE)
-
-@app.route('/analyze', methods=['POST'])
-def analyze():
-    data = request.json
-    content = data.get('content', '')
-    sender = data.get('sender', '')
-    subject = data.get('subject', '')
-    
-    # If sender or subject are not provided in the form, try to extract from content
-    if content and (not sender or not subject):
-        msg = email.message_from_string(content, policy=policy.default)
-        if not sender:
-            sender = msg.get('from', '')
-        if not subject:
-            subject = msg.get('subject', '')
-    
-    # Analyze the email
-    result = analyzer.analyze_email(content, sender=sender, subject=subject)
-    
-    # Return the analysis result as JSON
+    """API status endpoint"""
     return jsonify({
-        'verdict': result.verdict,
-        'risk_score': result.risk_score,
-        'reason': result.reason,
-        'artifacts': result.artifacts,
-        'recommendations': result.recommendations
+        'message': 'Phishing Analyzer API',
+        'status': 'running',
+        'version': '1.0',
+        'endpoints': {
+            'analyze': '/api/analyze (POST)',
+            'health': '/api/health (GET)'
+        }
     })
 
-def open_browser():
-    """Open browser after a short delay"""
-    # Give the server time to start
-    threading.Timer(1.5, lambda: webbrowser.open(f'http://127.0.0.1:{port}')).start()
+@app.route('/api/health', methods=['GET'])
+def health_check():
+    return jsonify({'status': 'running', 'service': 'python-analyzer'})
 
+@app.route('/api/analyze', methods=['POST'])
+def analyze():
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'No JSON data provided'}), 400
+            
+        content = data.get('content', '')
+        sender = data.get('sender_email', data.get('sender', ''))
+        subject = data.get('subject', '')
+        
+        # If sender or subject are not provided, try to extract from content
+        if content and (not sender or not subject):
+            msg = email.message_from_string(content, policy=policy.default)
+            if not sender:
+                sender = msg.get('from', '')
+            if not subject:
+                subject = msg.get('subject', '')
+        
+        # Analyze the email using your existing logic
+        result = analyzer.analyze_email(content, sender=sender, subject=subject)
+        
+        # Return the analysis result as JSON
+        return jsonify({
+            'verdict': result.verdict,
+            'risk_score': result.risk_score,
+            'confidence': result.risk_score,  # For Node.js compatibility
+            'reason': result.reason,
+            'reasons': [result.reason] if result.reason else [],  # For Node.js compatibility
+            'artifacts': result.artifacts,
+            'recommendations': result.recommendations,
+            'details': {
+                'sender_analysis': {'sender': sender},
+                'content_analysis': {'analyzed': True},
+                'link_analysis': result.artifacts
+            }
+        })
+    
+    except Exception as e:
+        logging.error(f"Analysis error: {str(e)}")
+        return jsonify({'error': 'Analysis failed', 'details': str(e)}), 500
+
+# Update your main section:
 if __name__ == "__main__":
     # Configure logging
     logging.basicConfig(level=logging.INFO)
     
-    # Find an available port
-    port = 5000
+    # Use port 5001 (different from Node.js)
+    port = 5001
     
-    print("🔹 Starting Phishing Analyzer Web App")
-    print(f"🔹 Opening web interface at http://127.0.0.1:{port}")
+    print("🔹 Starting Phishing Analyzer API Server")
+    print(f"🔹 API available at http://127.0.0.1:{port}")
+    print(f"🔹 Endpoints:")
+    print(f"   GET  / - API status")
+    print(f"   GET  /api/health - Health check")
+    print(f"   POST /api/analyze - Analyze email")
     
-    # Open browser automatically
-    open_browser()
-    
-    # Start the Flask app
-    app.run(debug=False, port=port)
+    # Start the Flask app (API mode)
+    app.run(debug=True, port=port, host='127.0.0.1')
+

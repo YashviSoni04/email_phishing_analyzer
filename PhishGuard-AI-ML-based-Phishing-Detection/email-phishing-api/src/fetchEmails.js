@@ -140,7 +140,7 @@ async function fetchEmails() {
 // Take limit 
         const res = await gmail.users.messages.list({
             userId: "me",
-            maxResults: 5,
+            maxResults: 10,
         });
         console.log("Fetched message list from Gmail");
 

@@ -1,111 +1,91 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Email Phishing Analyzer</title>
-    <link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8" />
+  <title>Email Dashboard</title>
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  />
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>Email Phishing Analyzer</h1>
-            <button id="fetchEmails">Fetch Emails</button>
-        </header>
-
-        <div id="emailList" class="email-list"></div>
+  <div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h2>Email Dashboard</h2>
+      <button id="refresh-btn" class="btn btn-primary">Fetch Emails</button>
     </div>
+    <div id="status" class="mb-3 text-muted" style="display: none;"></div>
+    <div id="email-list"></div>
+  </div>
 
-    <template id="emailTemplate">
-        <div class="email-card">
-            <div class="email-header">
-                <div class="email-meta">
-                    <div class="from"></div>
-                    <div class="subject"></div>
-                </div>
-                <div class="phishing-status">
-                    <span class="status-icon"></span>
-                    <span class="status-text"></span>
-                </div>
+  <script>
+  async function fetchEmails() {
+    const status = document.getElementById('status') || (() => {
+      const el = document.createElement('p');
+      el.id = 'status';
+      document.body.prepend(el);
+      return el;
+    })();
+
+    const emailList = document.getElementById('email-list');
+    status.innerText = 'Loading emails…';
+    emailList.innerHTML = '';
+
+    try {
+      const res = await fetch('/api/fetch-emails');
+      const data = await res.json();
+
+      const list = data.map(mail => {
+        const analysis = mail.analysis || {};
+        const urls = analysis.urls || [];
+        const phishingUrls = analysis.phishingUrls || [];
+        const reasons = analysis.reasons || [];
+        const score = analysis.suspiciousScore ?? 'Not calculated';
+        const isPhishing = analysis.isPhishingEmail;
+
+        return `
+          <div class="card mb-4">
+            <div class="card-body">
+              <h5>${mail.from.split('<')[0]}</h5>
+              <p><strong>${mail.subject}</strong></p>
+              <p>${mail.snippet}</p>
+
+              <span class="badge bg-${isPhishing ? 'danger' : 'success'}">
+                ${isPhishing ? '🚨 Phishing Email' : '✅ Safe Email'}
+              </span>
+              <span class="badge bg-secondary ms-2">Score: ${score}</span>
+
+              <hr>
+
+              <p><strong>URLs Found:</strong> ${
+                urls.length ? urls.map(url => `<a href="${url}" target="_blank">${url}</a>`).join('<br>') : 'None'
+              }</p>
+
+              <p><strong>Phishing URLs:</strong> ${
+                phishingUrls.length ? phishingUrls.map(url => `<a href="${url}" target="_blank" class="text-danger">${url}</a>`).join('<br>') : 'None detected'
+              }</p>
+
+              <p><strong>Reasons for Suspicion:</strong> ${
+                reasons.length ? `<ul>${reasons.map(r => `<li>${r}</li>`).join('')}</ul>` : 'None'
+              }</p>
+
+              <small class="text-muted float-end">${new Date().toLocaleString()}</small>
             </div>
-            <div class="email-content">
-                <p class="snippet"></p>
-            </div>
-            <div class="url-section">
-                <h3>URLs Found</h3>
-                <ul class="url-list"></ul>
-            </div>
-            <div class="domain-reputation">
-                <h3>Domain Reputation</h3>
-                <ul class="reputation-list"></ul>
-            </div>
-        </div>
-    </template>
+          </div>
+        `;
+      }).join('');
 
-    <script>
-        document.getElementById('fetchEmails').addEventListener('click', async () => {
-            try {
-                const response = await fetch('http://localhost:3000/fetch-emails');
-                const emails = await response.json();
-                displayEmails(emails);
-            } catch (error) {
-                console.error('Error fetching emails:', error);
-            }
-        });
+      emailList.innerHTML = list;
+      status.innerText = '';
+    } catch (e) {
+      status.innerHTML = '<span class="text-danger">Failed to load emails</span>';
+      console.error(e);
+    }
+  }
 
-        function displayEmails(emails) {
-            const emailList = document.getElementById('emailList');
-            const template = document.getElementById('emailTemplate');
-            emailList.innerHTML = '';
+  document.getElementById('refresh-btn').addEventListener('click', fetchEmails);
+  window.onload = fetchEmails;
+</script>
 
-            emails.forEach(email => {
-                const emailCard = template.content.cloneNode(true);
-                
-                // Set email details
-                emailCard.querySelector('.from').textContent = `From: ${email.from}`;
-                emailCard.querySelector('.subject').textContent = `Subject: ${email.subject}`;
-                emailCard.querySelector('.snippet').textContent = email.snippet;
-
-                // Set phishing status
-                const statusIcon = emailCard.querySelector('.status-icon');
-                const statusText = emailCard.querySelector('.status-text');
-                if (email.isPhishingEmail) {
-                    statusIcon.textContent = '⚠️';
-                    statusText.textContent = 'Potential Phishing';
-                    emailCard.querySelector('.email-card').classList.add('phishing');
-                } else {
-                    statusIcon.textContent = '✅';
-                    statusText.textContent = 'Safe';
-                    emailCard.querySelector('.email-card').classList.add('safe');
-                }
-
-                // Add URLs
-                const urlList = emailCard.querySelector('.url-list');
-                if (email.urls && email.urls.length > 0) {
-                    email.urls.forEach(url => {
-                        const li = document.createElement('li');
-                        li.textContent = url;
-                        urlList.appendChild(li);
-                    });
-                } else {
-                    urlList.innerHTML = '<li>No URLs found</li>';
-                }
-
-                // Add domain reputation
-                const reputationList = emailCard.querySelector('.reputation-list');
-                if (email.domainReputation && email.domainReputation.length > 0) {
-                    email.domainReputation.forEach(rep => {
-                        const li = document.createElement('li');
-                        li.textContent = rep;
-                        reputationList.appendChild(li);
-                    });
-                } else {
-                    reputationList.innerHTML = '<li>No domain reputation data available</li>';
-                }
-
-                emailList.appendChild(emailCard);
-            });
-        }
-    </script>
 </body>
 </html>
