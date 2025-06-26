@@ -74,6 +74,7 @@ Do NOT commit client_secret.json, token.json, or .env — they contain sensitive
 
 Here’s a sample screenshot of the phishing email dashboard:
 
-![PhishGuard Screenshot](public/screenshot.png)
+![Email Phishing Analyzer Screenshot](Screenshot.png)
+
 
 
