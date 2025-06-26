@@ -1,138 +1,79 @@
+# 📧 PhishGuard — AI/ML-Based Email Phishing Detection
 
-
----
-
-```markdown
-# 🛡️ PhishGuard: AI/ML-based Phishing Detection System
-
-PhishGuard is a comprehensive phishing email detection system that integrates Gmail API access with phishing heuristics and threat intelligence APIs to identify suspicious emails. This project utilizes Natural Language Processing, link analysis, and domain reputation checks to detect potentially malicious emails.
-
----
-
-## 📂 Project Structure
-
-```
-PhishGuard-AI-ML-based-Phishing-Detection/
-│
-├── email-phishing-api/
-│   └── src/
-│       ├── server.js           # Backend server
-│       ├── phishingChecker.js  # Main phishing detection logic
-│       ├── token.json          # Gmail API token
-│       ├── client_secret.json  # Gmail API credentials
-│       ├── index.html          # Frontend interface
-│       └── ...
-```
+PhishGuard is a Node.js + Python-powered project that fetches Gmail emails and detects potential phishing using content and URL analysis with custom logic.
 
 ---
 
 ## 🚀 Features
 
-- ✅ Gmail API integration to fetch emails
-- 🔗 URL extraction and analysis using VirusTotal
-- 🌐 WHOIS-based domain reputation checks
-- 🧠 Pattern recognition for phishing phrases
-- ⚠️ Flags emails with suspicious links or phishing patterns
-- 📊 Frontend interface for quick testing
+- Fetches emails using Gmail API
+- Detects phishing via:
+  - Suspicious keywords
+  - Malicious URLs
+  - Urgency and sensitive info requests
+- Classifies emails as ✅ Safe or 🚨 Phishing
+- Shows reasons for detection
 
 ---
 
-## 📦 Requirements
+## 🛠️ Tech Stack
 
-- Node.js >= 16.x
-- Google API Credentials (`client_secret.json` and `token.json`)
-- VirusTotal API Key (set in `.env` or environment variable)
-- Internet connection
+- **Backend:** Node.js (Express)
+- **Frontend:** Vanilla HTML + Bootstrap
+- **Phishing Detection Logic:** Custom Python module
+- **Gmail Integration:** Google OAuth2
 
 ---
 
-## 🔧 Installation
+## 📁 Project Structure
 
-1. **Clone the Repository**
+root/
+│
+├── public/ # Frontend HTML (index.html)
+├── src/
+│ ├── server.js # Express server
+│ ├── fetchEmails.js # Gmail fetch logic
+│ ├── phishingDetector.js # Custom email analysis
+│ ├── generateToken.js # Token generator
+│ └── token.json # (Generated Google token, gitignored)
+│
+├── phishing_analyzer.py # Python phishing analyzer (if still used)
+├── .env # Your Google credentials (keep private)
+└── README.md
+
+---
+
+## 🧪 Setup & Run
+
+### 1. 🔧 Clone the Repo
 
 ```bash
-git clone https://github.com/yourusername/PhishGuard-AI-ML-based-Phishing-Detection.git
-cd PhishGuard-AI-ML-based-Phishing-Detection/email-phishing-api/src
-```
+git clone https://github.com/YashviSoni04/email_phishing_analyzer.git
+cd email_phishing_analyzer
 
-2. **Install Dependencies**
+2. 🧠 Set Up Python Dependencies
+pip install -r requirements.txt
 
-```bash
+Then run the analyzer (if used):
+python phishing_analyzer.py
+
+3. ⚙️ Set Up Node Server
+cd PhishGuard-AI-ML-based-Phishing-Detection
 npm install
-```
 
-3. **Setup Environment Variables**
+Start the server:
+node src/server.js
 
-Create a `.env` file or export the following:
+4. 🌐 Visit the App
+Open http://localhost:8080 in your browser.
 
-```env
-VIRUS_TOTAL_API_KEY=your_api_key_here
-```
+🔐 Note
+Do NOT commit client_secret.json, token.json, or .env — they contain sensitive information.
 
-4. **Add Gmail API Credentials**
+## 📸 Demo
 
-Place the following files in the `src/` folder:
-- `client_secret.json`
-- `token.json`
+Here’s a sample screenshot of the phishing email dashboard:
 
-[Get Gmail API Credentials →](https://developers.google.com/gmail/api/quickstart/nodejs)
+![PhishGuard Screenshot](public/screenshot.png)
 
----
-
-## 🖥️ Run the Application
-
-### Backend (API Server)
-
-```bash
-node server.js
-```
-
-Server will run on: [http://localhost:8080](http://localhost:8080)
-
-You may see a warning:
-```
-[DEP0040] DeprecationWarning: The `punycode` module is deprecated.
-```
-This can be safely ignored or patched by replacing `punycode` with a userland library if needed.
-
----
-
-### Frontend
-
-Open the HTML file in your browser:
-
-```
-http://127.0.0.1:5500/PhishGuard-AI-ML-based-Phishing-Detection/email-phishing-api/src/index.html
-```
-
----
-
-## 📌 Notes
-
-- Limits email fetch to the latest **100** emails.
-- Emails are scanned for suspicious keywords, domains, and links.
-- External APIs (e.g., VirusTotal) may have rate limits.
-
----
-
-## 📸 Screenshot
-
-![PhishGuard Interface]![alt text](image.png)
-
----
-
-## 🛠️ Future Enhancements
-
-- 🔍 ML-based text classification for phishing
-- 📦 Save reports to local DB (e.g., SQLite, MongoDB)
-- 📤 Auto-forward detected phishing mails to admin
-- 📈 Dashboard with analytics and filters
-
----
-
-## 🤝 Contributions
-
-Pull requests are welcome! Feel free to fork and enhance the detection logic or interface.
-
----
 

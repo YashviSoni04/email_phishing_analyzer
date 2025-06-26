@@ -15,3 +15,20 @@ build/
 venv/
 env/
 ENV/
+
+# Ignore Node.js dependencies
+node_modules/
+package-lock.json
+yarn.lock
+
+# Ignore Python dependencies
+__pycache__/
+venv/
+.venv/
+Pipfile.lock
+
+# Ignore IDE files
+.vscode/
+.idea/
+
+prompt.txt
