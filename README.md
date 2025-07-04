@@ -1,4 +1,4 @@
-# 📧 PhishGuard - Email Phishing Detection
+# 📧 PhishGuard - Email Phishing Detection Extension
 
 PhishGuard is a **Node.js + Python** powered system that integrates with your Gmail to detect phishing emails in real-time. It uses custom logic, keyword scanning, and external reputation APIs to identify suspicious messages.
 
