@@ -1,4 +1,4 @@
-# 📧 PhishGuard — AI/ML-Based Email Phishing Detection
+# 📧 PhishGuard - Email Phishing Detection
 
 PhishGuard is a **Node.js + Python** powered system that integrates with your Gmail to detect phishing emails in real-time. It uses custom logic, keyword scanning, and external reputation APIs to identify suspicious messages.
 
@@ -40,8 +40,6 @@ phishing_analyzer/
 │ ├── generateToken.js # Google OAuth2 token setup
 │ ├── token.json # Google token (gitignored)
 │ └── client_secret.json # Google credentials (gitignored)
-│
-├── phishing_analyzer.py # (Optional) Python-based ML analyzer
 ├── gmail-extension/ # Chrome extension folder
 │ ├── content.js # Injects results in Gmail
 │ ├── manifest.json
@@ -57,7 +55,6 @@ phishing_analyzer/
 
 ### 1. Clone and Navigate
 
-```bash
 git clone https://github.com/YashviSoni04/email_phishing_analyzer.git
 cd email_phishing_analyzer
 
