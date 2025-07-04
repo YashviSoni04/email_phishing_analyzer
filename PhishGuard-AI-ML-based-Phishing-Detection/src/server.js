@@ -1,86 +1,87 @@
 const express = require('express');
 const axios = require('axios');
 const path = require('path');
+const fetchEmails = require("./fetchEmails");
+const { analyzeEmail } = require('./phishingDetector');
 
 const app = express();
 const PORT = process.env.PORT || 8080;
 
-const fetchEmails = require("./fetchEmails");
+const cors = require('cors');
+app.use(cors());
+
 
 // Middleware
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
-// API to fetch Gmail emails
+// === ROUTES === //
+
+// Fetch Gmail Emails
 app.get("/api/fetch-emails", async (req, res) => {
-    try {
-        const emails = await fetchEmails();
-        res.json(emails);
-    } catch (error) {
-        console.error("Error fetching emails:", error.message);
-        res.status(500).json({ error: "Failed to fetch emails" });
-    }
+  try {
+    const emails = await fetchEmails();
+    res.json(emails);
+  } catch (error) {
+    console.error("Error fetching emails:", error.message);
+    res.status(500).json({ error: "Failed to fetch emails" });
+  }
 });
 
-// Serve frontend
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
+// Run Local Detection Logic (Node.js)
+app.post('/api/check-email', (req, res) => {
+  const content = req.body.content || '';
+  const subject = req.body.subject || '';
+  const from = req.body.from || '';
+
+  const result = analyzeEmail(content, subject, from);
+  res.json(result);
 });
 
-// Check if Python backend is running
+// Health check for Python backend
 app.get('/api/check-backend', async (req, res) => {
-    try {
-        const response = await axios.get('http://localhost:5001/api/health');
-        res.json({ status: 'Connected ✅', details: response.data });
-    } catch (error) {
-        res.json({ status: 'Not Connected ❌', error: error.message });
-    }
+  try {
+    const response = await axios.get('http://localhost:5001/api/health');
+    res.json({ status: 'Connected ✅', details: response.data });
+  } catch (error) {
+    res.json({ status: 'Not Connected ❌', error: error.message });
+  }
 });
 
-// Analyze email endpoint (calls Python backend)
+// Python backend phishing analysis
 app.post('/analyze-email', async (req, res) => {
-    try {
-        const { sender_email, subject, content } = req.body;
-        const response = await axios.post('http://localhost:5001/api/analyze', {
-            sender_email,
-            subject,
-            content
-        });
-        res.json(response.data);
-    } catch (error) {
-        console.error('Error calling Python API:', error.message);
-        if (error.code === 'ECONNREFUSED') {
-            res.status(503).json({
-                error: 'Python analysis service is not running',
-                details: 'Please start the Python backend first'
-            });
-        } else {
-            res.status(500).json({
-                error: 'Analysis service error',
-                details: error.message
-            });
-        }
-    }
+  try {
+    const { sender_email, subject, content } = req.body;
+    const response = await axios.post('http://localhost:5001/api/analyze', {
+      sender_email,
+      subject,
+      content
+    });
+    res.json(response.data);
+  } catch (error) {
+    console.error('Error calling Python API:', error.message);
+    res.status(error.code === 'ECONNREFUSED' ? 503 : 500).json({
+      error: error.code === 'ECONNREFUSED'
+        ? 'Python analysis service is not running'
+        : 'Analysis service error',
+      details: error.message
+    });
+  }
 });
 
-// Support alternative endpoint
+// Shortcut route for compatibility
 app.post('/api/analyze', (req, res) => {
-    req.url = '/analyze-email';
-    app._router.handle(req, res);
+  req.url = '/analyze-email';
+  app._router.handle(req, res);
 });
 
-
-// Serve static files from the "public" directory
-app.use(express.static(path.join(__dirname, '..', 'public')));
-
-// Serve the main HTML file
+// Frontend Entry
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
 });
 
-// Start the server
+// Start Server
 app.listen(PORT, () => {
-    console.log(`🚀 Node.js Frontend running on http://localhost:${PORT}`);
-    console.log(`📡 Make sure Python backend is running on port 5001`);
-    console.log(`🔗 Visit: http://localhost:${PORT} to use the app`);
+  console.log(`🚀 Node.js Server running on http://localhost:${PORT}`);
+  console.log(`📡 Ensure Python backend is running at http://localhost:5001`);
 });

@@ -1,0 +1,23 @@
+{
+  "manifest_version": 3,
+  "name": "Gmail Phishing Detector",
+  "version": "1.0",
+  "description": "Detect phishing emails inside Gmail",
+  "permissions": ["scripting", "activeTab"],
+  "host_permissions": [
+  "http://localhost:8080/*",
+  "http://192.168.0.100:8080/*",
+  "https://mail.google.com/*",
+  "https://stylus-identifier-bars-files.trycloudflare.com"
+],
+  "action": {
+    "default_title": "Phishing Detector"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://mail.google.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

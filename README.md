@@ -1,80 +1,103 @@
 # 📧 PhishGuard — AI/ML-Based Email Phishing Detection
 
-PhishGuard is a Node.js + Python-powered project that fetches Gmail emails and detects potential phishing using content and URL analysis with custom logic.
+PhishGuard is a **Node.js + Python** powered system that integrates with your Gmail to detect phishing emails in real-time. It uses custom logic, keyword scanning, and external reputation APIs to identify suspicious messages.
 
 ---
 
 ## 🚀 Features
 
-- Fetches emails using Gmail API
-- Detects phishing via:
-  - Suspicious keywords
-  - Malicious URLs
-  - Urgency and sensitive info requests
-- Classifies emails as ✅ Safe or 🚨 Phishing
-- Shows reasons for detection
+✅ Fetches emails from Gmail using OAuth2  
+🚨 Detects phishing based on:
+- Suspicious phrases (e.g., *verify your account*, *urgent action*)
+- Phishing URLs (via VirusTotal, WHOIS)
+- Newly registered domains or spoofing signs  
+📊 Dashboard with score, reasons, and links  
+🧩 Chrome Extension to view phishing detection **inside Gmail UI**
 
 ---
 
 ## 🛠️ Tech Stack
 
-- **Backend:** Node.js (Express)
 - **Frontend:** Vanilla HTML + Bootstrap
-- **Phishing Detection Logic:** Custom Python module
-- **Gmail Integration:** Google OAuth2
+- **Node.js:** Express server (REST APIs)
+- **Python:** Email content analyzer
+- **Google APIs:** Gmail + OAuth2 integration
+- **Optional APIs:** VirusTotal, WHOIS
 
 ---
 
-## 📁 Project Structure
+## 📁 Folder Structure
 
-root/
+phishing_analyzer/
 │
-├── public/ # Frontend HTML (index.html)
-├── src/
-│ ├── server.js # Express server
-│ ├── fetchEmails.js # Gmail fetch logic
-│ ├── phishingDetector.js # Custom email analysis
-│ ├── generateToken.js # Token generator
-│ └── token.json # (Generated Google token, gitignored)
+├── public/ # Frontend dashboard
+│ └── index.html
 │
-├── phishing_analyzer.py # Python phishing analyzer (if still used)
-├── .env # Your Google credentials (keep private)
-└── README.md
+├── src/ # Backend
+│ ├── server.js # Main Node.js server
+│ ├── fetchEmails.js # Gmail API logic
+│ ├── phishingDetector.js # Node.js detection logic
+│ ├── generateToken.js # Google OAuth2 token setup
+│ ├── token.json # Google token (gitignored)
+│ └── client_secret.json # Google credentials (gitignored)
+│
+├── phishing_analyzer.py # (Optional) Python-based ML analyzer
+├── gmail-extension/ # Chrome extension folder
+│ ├── content.js # Injects results in Gmail
+│ ├── manifest.json
+│ └── (icons, optional popup.html)
+│
+├── .env # API keys (VirusTotal, Gmail info)
+├── README.md
+
 
 ---
 
-## 🧪 Setup & Run
+## 🔧 Setup Instructions
 
-### 1. 🔧 Clone the Repo
+### 1. Clone and Navigate
 
 ```bash
 git clone https://github.com/YashviSoni04/email_phishing_analyzer.git
 cd email_phishing_analyzer
 
-2. 🧠 Set Up Python Dependencies
+
+
+2. 🔑 Set Up Google OAuth2
+Go to https://console.cloud.google.com/
+
+Create OAuth client ID
+
+Add this as redirect URI:
+http://localhost:8080/oauth2callback
+
+Download the client_secret.json and place it in /src/
+
+
+3. 🧠 Python Backend (Optional)
 pip install -r requirements.txt
+python phishing_analyzer.py  
 
-Then run the analyzer (if used):
-python phishing_analyzer.py
-
-3. ⚙️ Set Up Node Server
+4. 🚀 Start Node Server
 cd PhishGuard-AI-ML-based-Phishing-Detection
 npm install
-
-Start the server:
 node src/server.js
 
-4. 🌐 Visit the App
-Open http://localhost:8080 in your browser.
+5. 🌐 Open Dashboard
+http://localhost:8080
 
-🔐 Note
-Do NOT commit client_secret.json, token.json, or .env — they contain sensitive information.
+If using a Chrome extension, expose the port via:
+cloudflared tunnel --url http://localhost:8080
+Copy the HTTPS URL and use it in your extension content.js and manifest.json.
 
-## 📸 Demo
+🧩 Chrome Extension Setup (Optional)
+Go to chrome://extensions
+Enable Developer Mode
+Click Load Unpacked
+Select the gmail-extension folder
 
-Here’s a sample screenshot of the phishing email dashboard:
+⚠️ Update the Cloudflare URL in:
 
-![Email Phishing Analyzer Screenshot](Screenshot.png)
-
-
+gmail-extension/content.js (for fetch URL)
+gmail-extension/manifest.json under "host_permissions"
 

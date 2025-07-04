@@ -28,6 +28,7 @@
     })();
 
     const emailList = document.getElementById('email-list');
+    status.style.display = 'block';
     status.innerText = 'Loading emails…';
     emailList.innerHTML = '';
 
@@ -35,8 +36,14 @@
       const res = await fetch('/api/fetch-emails');
       const data = await res.json();
 
+      if (!Array.isArray(data)) {
+        console.warn("Expected array from API, got:", data);
+        status.innerHTML = '<span class="text-danger">Invalid response from server</span>';
+        return;
+      }
+
       const list = data.map(mail => {
-        const analysis = mail.analysis || {};
+        const analysis = mail.analysis || mail;
         const urls = analysis.urls || [];
         const phishingUrls = analysis.phishingUrls || [];
         const reasons = analysis.reasons || [];
@@ -46,7 +53,7 @@
         return `
           <div class="card mb-4">
             <div class="card-body">
-              <h5>${mail.from.split('<')[0]}</h5>
+              <h5>${mail.from?.split('<')[0]}</h5>
               <p><strong>${mail.subject}</strong></p>
               <p>${mail.snippet}</p>
 
